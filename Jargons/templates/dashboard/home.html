@@ -101,11 +101,15 @@
                     <span class="btn-inner--icon"><i class="fa fa-plus-circle"></i></span>
                     <span class="btn-inner--text">Import CSV File</span>
                 </button>
-                <div class="dropdown form-group">
-                    <select class="form-control" name="indices" id="indices" onchange="predict(this)">
-                        <option disabled selected>Select...</option>
-                    </select>
-                </div>
+                <button type="button" class="btn btn-secondary">
+                    <span class="btn-inner--icon"><i class="fa fa-line-chart"></i></span>
+                    <span class="btn-inner--text">Select graph</span>
+                    <span class="dropdown">
+                        <select name="indices" id="indices" onchange="predict(this)">
+                            <option disabled selected>Select...</option>
+                        </select>
+                    </span>
+                </button>
                 <!-- Modal -->
                 <div class="modal fade" id="createcontainer" tabindex="-1" role="dialog"
                      aria-labelledby="createcontainerLabel" aria-hidden="true">
