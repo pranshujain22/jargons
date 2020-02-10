@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+{% extends 'dashboard/home_base.html' %}
+
+{% load staticfiles %}
+
+{% block head %}
+    <title>Containers</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        .lds-ring {
+            display: inline-block;
+            position: relative;
+            width: 1.5em;
+            height: 1.5em;
+        }
+
+        .lds-ring div {
+            box-sizing: border-box;
+            display: block;
+            position: absolute;
+            width: 1.3em;
+            height: 1.3em;
+            margin: .1em;
+            border: .2em solid dodgerblue;
+            border-radius: 50%;
+            animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            border-color: dodgerblue transparent transparent transparent;
+        }
+
+        .lds-ring div:nth-child(1) {
+            animation-delay: -0.45s;
+        }
+
+        .lds-ring div:nth-child(2) {
+            animation-delay: -0.3s;
+        }
+
+        .lds-ring div:nth-child(3) {
+            animation-delay: -0.15s;
+        }
+
+        @keyframes lds-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card .table td, .card .table th {
+            padding-right: 0rem;
+            padding-left: 0rem;
+        }
+
+        a:hover {
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block page_name %}Containers{% endblock %}
+
+{% block body %}
+    <!-- Main content -->
+    <div class="main-content">
+        <!-- Top navbar -->
+        <nav class="navbar navbar-top navbar-expand-md navbar-dark" id="navbar-main">
+            <div class="container-fluid">
+                <!-- Brand -->
+                <a class="h4 mb-0 text-white text-uppercase d-none d-lg-inline-block" href="{% url 'dashboard:index' %}">Dashboard</a>
+                <!-- User -->
+                <ul class="navbar-nav align-items-center d-none d-md-flex">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="false">
+                            <div class="media align-items-center">
+                                <span class="ni ni-single-02 text-yellow"></span>
+                                <div class="media-body ml-2 d-none d-lg-block">
+                                    <span class="mb-0 text-sm  font-weight-bold">{{ request.session.enrollment_id }}</span>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-right">
+                            <div class=" dropdown-header noti-title">
+                                <h6 class="text-overflow m-0">Welcome!</h6>
+                            </div>
+                            <a href={% url 'dashboard:index' %} class="dropdown-item">
+                                <i class="ni ni-single-02"></i>
+                                <span>My profile</span>
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <!-- Header -->
+        <div class="header bg-gradient-primary pb-8 pt-5 pt-md-6">
+            {% if message %}
+                <p class="lead text-center text-white">{{ message }}</p>
+            {% endif %}
+            <div class="container-fluid">
+                <!-- Button trigger modal -->
+                <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#createcontainer"
+                        id="modal_btn">
+                    <span class="btn-inner--icon"><i class="fa fa-plus-circle"></i></span>
+                    <span class="btn-inner--text">Import CSV File</span>
+                </button>
+                <div class="dropdown form-group">
+                    <select class="form-control" name="indices" id="indices">
+                        <option disabled selected>Select...</option>
+                    </select>
+                </div>
+                <!-- Modal -->
+                <div class="modal fade" id="createcontainer" tabindex="-1" role="dialog"
+                     aria-labelledby="createcontainerLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <form id="file_details" method="post" action={% url 'dashboard:upload' %} enctype="multipart/form-data">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <large class="text-uppercase font-weight-bold">Select a file</large>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <input type="file" class="form-control" id="csv-file" name="csv-file"
+                                                   oninput="check_file(this)" required>
+                                            <small class="" id="file_label"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" id="upload_btn" class="btn btn-primary" onclick="upload()">Upload
+                                    </button>
+                                    <div id="loader" class="lds-ring" style="display: none">
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                    </div>
+                                    <button type="button" id="cancel_btn" class="btn btn-secondary ml-auto"
+                                            data-dismiss="modal">Close
+                                    </button>
+                                </div>
+                                {% csrf_token %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Page content -->
+        <div class="container-fluid mt--7">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card card-chart" style="height: 500px">
+                        <div class="card-header">
+                            <h4 class="card-title">Record</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="records ct-perfect-fourth" style="padding: 10%;height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="chart_div" style="width: 900px; height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+{% block script %}
+
+    <script type="text/javascript">
+
+    {#drawChart();#}
+    loadIndices();
+
+    function upload() {
+        document.getElementById('upload_btn').innerText = 'Uploading...';
+        document.getElementById('cancel_btn').disabled = true;
+        document.getElementById('loader').style.display = 'block';
+    }
+
+    function loadIndices() {
+        $.ajax({
+            type: 'GET',
+            url: '{% url 'dashboard:indices' %}',
+            success: function (data) {
+                console.log(data);
+                {#document.getElementById('indices').innerHTML = "";#}
+                data = data['indices'];
+                for (var i in data) {
+                    $('#indices').append("<option>" + data[i] + "</option>")
+                }
+                {#document.getElementById(data[0]).checked = true;#}
+            },
+            error: function (data) {
+                console.log(data);
+                alert("Something went wrong!");
+            }
+        });
+    }
+
+    function drawChart() {
+        new Chartist.Line('.records', {
+            labels: ['1', '2', '3'],
+            series: [
+                [10, 25, 30],
+                [5, 20]
+            ]
+        }, {
+            {#showLine: false,#}
+            showPoint: true,
+            lineSmooth: false,
+            {% comment %}axisX: {
+                showGrid: true,
+                showLabel: true
+            },
+            axisY: {
+                offset: 60,
+                labelInterpolationFnc: function(value) {
+                    return '$' + value + 'm';
+                }
+            }{% endcomment %}
+        });
+    }
+
+
+    function check_file(element) {
+        console.log(element.value);
+        document.getElementById('upload_btn').disabled = false;
+    }
+    </script>
+
+{% endblock %}
