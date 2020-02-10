@@ -4,6 +4,8 @@ from django.urls.base import reverse
 from django.contrib import messages
 from django.shortcuts import render
 import dashboard.Elastic as elastic
+from django.views.decorators.csrf import csrf_exempt
+import dashboard.prediction as prediction
 
 
 def index(request):
@@ -26,7 +28,7 @@ def upload(request):
             context['url'] = fs.url(name)
 
             elastic.csv_writer(fs.path(name), str(name).split('.')[0].lower(), 'data', ';')
-
+            fs.delete(name)
             messages.add_message(request, messages.INFO, 'File uploaded successfully')
             return HttpResponseRedirect(reverse('dashboard:index'))
         except Exception as e:
@@ -50,8 +52,32 @@ def indices(request):
     return JsonResponse({})
 
 
+@csrf_exempt
 def get_prediction(request):
-    # if request.method == 'POST':
-    #     index = request.POST.get('index')
-    #
-    pass
+    if request.method == 'POST':
+        index_name = request.POST.get('index')
+        print(index_name)
+        data = dict()
+        predictions, test = prediction.predict(index_name)
+
+        y_predict = list()
+        for p in predictions:
+            y_predict.append(p.tolist()[0])
+
+        y_test = list()
+        for t in test:
+            y_test.append(t.tolist()[0])
+
+        data['prediction'] = {
+            'x': list(range(len(y_predict))),
+            'y': y_predict
+        }
+        data['test'] = {
+            'x': list(range(len(y_test))),
+            'y': y_test
+        }
+        print(data)
+        return JsonResponse(dict(data))
+
+    return JsonResponse({})
+

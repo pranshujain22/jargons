@@ -4,7 +4,7 @@
 {% load staticfiles %}
 
 {% block head %}
-    <title>Containers</title>
+    <title>Dashboard</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
@@ -57,6 +57,23 @@
         a:hover {
             cursor: pointer;
         }
+
+        .ct-series-a .ct-point {
+            stroke: blue;
+            stroke-width: 5px;
+        }
+        .ct-series-b .ct-point {
+            stroke: black;
+            stroke-width: 5px;
+        }
+        .ct-series-a .ct-line {
+            stroke: blue;
+            stroke-width: 2px;
+        }
+        .ct-series-b .ct-line {
+            stroke: black;
+            stroke-width: 2px;
+        }
     </style>
 {% endblock %}
 
@@ -70,29 +87,6 @@
             <div class="container-fluid">
                 <!-- Brand -->
                 <a class="h4 mb-0 text-white text-uppercase d-none d-lg-inline-block" href="{% url 'dashboard:index' %}">Dashboard</a>
-                <!-- User -->
-                <ul class="navbar-nav align-items-center d-none d-md-flex">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link pr-0" href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
-                           aria-expanded="false">
-                            <div class="media align-items-center">
-                                <span class="ni ni-single-02 text-yellow"></span>
-                                <div class="media-body ml-2 d-none d-lg-block">
-                                    <span class="mb-0 text-sm  font-weight-bold">{{ request.session.enrollment_id }}</span>
-                                </div>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-right">
-                            <div class=" dropdown-header noti-title">
-                                <h6 class="text-overflow m-0">Welcome!</h6>
-                            </div>
-                            <a href={% url 'dashboard:index' %} class="dropdown-item">
-                                <i class="ni ni-single-02"></i>
-                                <span>My profile</span>
-                            </a>
-                        </div>
-                    </li>
-                </ul>
             </div>
         </nav>
         <!-- Header -->
@@ -108,7 +102,7 @@
                     <span class="btn-inner--text">Import CSV File</span>
                 </button>
                 <div class="dropdown form-group">
-                    <select class="form-control" name="indices" id="indices">
+                    <select class="form-control" name="indices" id="indices" onchange="predict(this)">
                         <option disabled selected>Select...</option>
                     </select>
                 </div>
@@ -156,7 +150,14 @@
                 <div class="col-lg-12">
                     <div class="card card-chart" style="height: 500px">
                         <div class="card-header">
-                            <h4 class="card-title">Record</h4>
+                            <h2 class="card-title">Record
+                            <span id="graph_loader" class="lds-ring float-right" style="display: none">
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                                <div></div>
+                            </span>
+                            </h2>
                         </div>
                         <div class="card-body">
                             <div class="records ct-perfect-fourth" style="padding: 10%;height: 300px;"></div>
@@ -174,7 +175,6 @@
 
     <script type="text/javascript">
 
-    {#drawChart();#}
     loadIndices();
 
     function upload() {
@@ -203,27 +203,54 @@
         });
     }
 
-    function drawChart() {
+
+    function predict(element) {
+        document.getElementById('graph_loader').style.display = 'block';
+        data = {'index': element.value};
+        $.ajax({
+            type: 'POST',
+            url: '{% url 'dashboard:predict' %}',
+            data: data,
+            success: function (data) {
+                console.log(data);
+                drawChart(data['prediction']['x'], data['prediction']['y'], data['test']['y']);
+            },
+            error: function (data) {
+                console.log(data);
+                alert("Something went wrong!");
+            }
+        });
+    }
+
+    function drawChart(x_predict, y_predict, y_test) {
+        document.getElementById('graph_loader').style.display = 'none';
         new Chartist.Line('.records', {
-            labels: ['1', '2', '3'],
+            labels: x_predict,
             series: [
-                [10, 25, 30],
-                [5, 20]
+                y_predict,
+                y_test
             ]
         }, {
-            {#showLine: false,#}
-            showPoint: true,
+            stretch: true,
+            showLine: false,
             lineSmooth: false,
-            {% comment %}axisX: {
-                showGrid: true,
-                showLabel: true
+            axisX: {
+                showGrid: false,
+                showLabel: true,
+                labelInterpolationFnc: function(value, index) {
+                    return index % 150 === 0 ? value : null;
+                }
             },
             axisY: {
-                offset: 60,
-                labelInterpolationFnc: function(value) {
-                    return '$' + value + 'm';
+                showGrid: false
+            }
+        },
+        {
+            axisX: {
+                labelInterpolationFnc: function (value, index) {
+                    return index % 40 === 0 ? value : null;
                 }
-            }{% endcomment %}
+            }
         });
     }
 

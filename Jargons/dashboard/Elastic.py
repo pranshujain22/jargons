@@ -1,6 +1,5 @@
 import csv
 import json
-from pandasticsearch import Select
 from elasticsearch import helpers, Elasticsearch
 
 args = {
@@ -34,11 +33,13 @@ def csv_writer(file_name, index_name, doc_type, delimiter):
             if count == 0:
                 headers = row
             else:
+                tmp_obj = dict(obj)
+                tmp_obj['_source'] = {}
                 for i, val in enumerate(row):
-                    obj['_source'][headers[i]] = val
-                obj['_id'] = count
+                    tmp_obj['_source'][headers[i]] = '0' if val == 'null' else val
+                tmp_obj['_id'] = count
 
-                actions.append(obj.copy())
+                actions.append(dict(tmp_obj))
             count += 1
         # print(actions)
         helpers.bulk(es, actions=actions)
@@ -49,7 +50,7 @@ def csv_reader(index_name, size):
     doc = {
         'size': size
     }
-    return es.search(index=index_name, body=doc)
+    return es.search(index=index_name, body=doc, request_timeout=30)
 
 
 def get_index_size(index_name, doc_type):
@@ -67,9 +68,10 @@ def remove_quotes(old_file, new_file):
 
 
 # if __name__ == "__main__":
+#     es.indices.delete('cpu_usage')
 #     print(es.indices.get_alias().keys())
 #     data = csv_reader(index_name='cpu_usage', size=10000)
-#     # print(json.dumps(data, indent=4))
+#    print(json.dumps(data, indent=4))
 #     df = Select.from_dict(data).to_pandas()
 #     print(df)
 #
