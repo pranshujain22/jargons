@@ -152,19 +152,24 @@
         <div class="container-fluid mt--7">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card card-chart" style="height: 500px">
+                    <div class="card card-chart" style="height: auto">
                         <div class="card-header">
-                            <h2 class="card-title">Record
+                            <h2 class="card-title">Record</h2>
+                            <span class="form-group"><input type="checkbox" id="predicted" onchange="update_graph()" disabled checked>
+                                Predicted
+                            </span>
+                            <span class="form-group"><input type="checkbox" id="actual" onchange="update_graph()" disabled checked>
+                                Actual
+                            </span>
                             <span id="graph_loader" class="lds-ring float-right" style="display: none">
                                 <div></div>
                                 <div></div>
                                 <div></div>
                                 <div></div>
                             </span>
-                            </h2>
                         </div>
                         <div class="card-body">
-                            <div class="records ct-perfect-fourth" style="padding: 10%;height: 300px;"></div>
+                            <div class="records ct-perfect-fourth" style="padding: 10%;height: 400px;"></div>
                         </div>
                     </div>
                 </div>
@@ -180,6 +185,7 @@
     <script type="text/javascript">
 
     loadIndices();
+    var x_predict, y_predict, y_test;
 
     function upload() {
         document.getElementById('upload_btn').innerText = 'Uploading...';
@@ -207,17 +213,23 @@
         });
     }
 
-
-    function predict(element) {
+    function predict() {
         document.getElementById('graph_loader').style.display = 'block';
-        data = {'index': element.value};
+        console.log(document.getElementById('indices').value);
+        document.getElementById('predicted').disabled = false;
+        document.getElementById('actual').disabled = false;
+
+        data = {'index': document.getElementById('indices').value};
         $.ajax({
             type: 'POST',
             url: '{% url 'dashboard:predict' %}',
             data: data,
             success: function (data) {
                 console.log(data);
-                drawChart(data['prediction']['x'], data['prediction']['y'], data['test']['y']);
+                x_predict = data['prediction']['x'];
+                y_predict = data['prediction']['y'];
+                y_test = data['test']['y'];
+                update_graph();
             },
             error: function (data) {
                 console.log(data);
@@ -226,14 +238,11 @@
         });
     }
 
-    function drawChart(x_predict, y_predict, y_test) {
+    function drawChart(x, y) {
         document.getElementById('graph_loader').style.display = 'none';
         new Chartist.Line('.records', {
-            labels: x_predict,
-            series: [
-                y_predict,
-                y_test
-            ]
+            labels: x,
+            series: y
         }, {
             stretch: true,
             showLine: false,
@@ -258,6 +267,19 @@
         });
     }
 
+    function update_graph(){
+        var y = [];
+        if(document.getElementById('predicted').checked){
+            y = [y_predict];
+        }
+        if(document.getElementById('actual').checked){
+            y = [[], y_test];
+        }
+        if(document.getElementById('predicted').checked && document.getElementById('actual').checked){
+            y = [y_predict, y_test];
+        }
+        drawChart(x_predict, y);
+    }
 
     function check_file(element) {
         console.log(element.value);

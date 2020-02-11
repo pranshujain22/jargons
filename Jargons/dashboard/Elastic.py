@@ -75,5 +75,3 @@ def remove_quotes(old_file, new_file):
 #     df = Select.from_dict(data).to_pandas()
 #     print(df)
 #
-#     csv_writer(file_name='CPU_usage.csv', index_name='cpu_usage', doc_type='data', delimiter=';')
-#
