@@ -238,7 +238,7 @@
         });
     }
 
-    function drawChart(x, y) {
+    function drawChart(x, y, low, high) {
         document.getElementById('graph_loader').style.display = 'none';
         new Chartist.Line('.records', {
             labels: x,
@@ -255,7 +255,9 @@
                 }
             },
             axisY: {
-                showGrid: false
+                showGrid: false,
+                low: low,
+                high: high
             }
         },
         {
@@ -269,16 +271,23 @@
 
     function update_graph(){
         var y = [];
+        var low, high;
         if(document.getElementById('predicted').checked){
             y = [y_predict];
+            low = undefined;
+            high = undefined;
         }
         if(document.getElementById('actual').checked){
             y = [[], y_test];
+            low = -1.5;
+            high = 1.5;
         }
         if(document.getElementById('predicted').checked && document.getElementById('actual').checked){
             y = [y_predict, y_test];
+            low = -1.5;
+            high = 1.5;
         }
-        drawChart(x_predict, y);
+        drawChart(x_predict, y, low, high);
     }
 
     function check_file(element) {
